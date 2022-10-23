@@ -22,16 +22,25 @@ end
 
 # Names of Docker images built:
 CLIENT_IMAGE  = "node_election:latest"
+LOOKUP_IMAGE  = "node_looukup:latest"
 
 # Node definitions
 NODE  = { 
-          :dir => "client",
-          :name_prefix => "client-",  
+          :dir => "node",
+          :name_prefix => "node-",  
           :subnet => "10.0.1.",
           :ip_offset => 10, 
-          :image => CLIENT_IMAGE,
-          :lb_config_file => "client/config.conf" # generated config.
+          :image => CLIENT_IMAGE
         }
+
+# Lookup definition
+LOOKUP = {
+    :name => "node-lookup",
+    :ip_addr => "10.0.1.111",
+    :image => LOOKUP_IMAGE,
+    :lb_config_file => "lookup/config.conf"
+}
+
 
 # Common configuration
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -42,12 +51,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     trigger.ruby do |env, machine|
       # --- start of Ruby script ---
       puts "Building nodes configuration"
-      File.delete(NODE[:lb_config_file]) if File.exist?(NODE[:lb_config_file])
-      file = File.new(NODE[:lb_config_file], 'w')
+      File.delete(LOOKUP[:lb_config_file]) if File.exist?(LOOKUP[:lb_config_file])
+      file = File.new(LOOKUP[:lb_config_file], 'w')
       (1..NODES_COUNT).each do |i|
           node_name = "#{NODE[:name_prefix]}#{i}"
           node_ip = "#{NODE[:subnet]}#{NODE[:ip_offset] + i}"
-          file.puts "#{node_name} #{node_ip}"
+          file.puts "#{node_name}, #{node_ip}"
       end
       file.close
 
@@ -56,6 +65,18 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       # --- end of Ruby script ---
 
     end
+  end
+
+  config.vm.define LOOKUP[:name] do |s|
+    s.vm.network "private_network", ip: LOOKUP[:ip_addr]
+    s.vm.network "forwarded_port", guest: 5000, host: 8080, host_ip: "0.0.0.0"
+    s.vm.hostname = LOOKUP[:name]
+    s.vm.provider "docker" do |d|
+      d.image = LOOKUP[:image]
+      d.name = LOOKUP[:name]
+      # d.has_ssh = true
+    end
+    s.vm.post_up_message = "Node #{LOOKUP[:name]} up and running. You can access the node with 'vagrant ssh #{LOOKUP[:name]}'}"
   end
 
   # Definition of N nodes
