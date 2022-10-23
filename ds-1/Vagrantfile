@@ -3,6 +3,8 @@
 # Create N backend nodes and 1 frontend node working as a load-balancer.
 #
 
+# Number of backends to start:
+NODES_COUNT = 3
 VAGRANTFILE_API_VERSION = "2"
 # set docker as the default provider
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'docker'
@@ -19,38 +21,33 @@ unless Vagrant.has_plugin?("vagrant-docker-compose")
 end
 
 # Names of Docker images built:
-CLIENT_IMAGE  = "node-election:latest"
+CLIENT_IMAGE  = "node_election:latest"
 
 # Node definitions
-NODE  = { :nameprefix => "client-",  # backend nodes get names: backend-1, backend-2, etc.
-              :subnet => "10.0.1.",
-              :ip_offset => 100,  # backend nodes get IP addresses: 10.0.1.101, .102, .103, etc
-              :image => CLIENT_IMAGE,
-              :port => 5000 }
-
-# Number of backends to start:
-NODES_COUNT = 11
+NODE  = { 
+          :dir => "client",
+          :name_prefix => "client-",  
+          :subnet => "10.0.1.",
+          :ip_offset => 10, 
+          :image => CLIENT_IMAGE,
+          :lb_config_file => "client/config.conf" # generated config.
+        }
 
 # Common configuration
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-
+  config.vm.synced_folder '.', '/vagrant', disabled: true
   # Before the 'vagrant up' command is started, build docker images:
   config.trigger.before :up, type: :command do |trigger|
     trigger.name = "Build docker images and configuration files"
     trigger.ruby do |env, machine|
-
-
       # --- start of Ruby script ---
       puts "Building nodes configuration"
-      File.delete(NODE[:config_file]) if File.exist?(NODE[:config_file])
-      file = File.new(NODE[:config_file], 'w')
+      File.delete(NODE[:lb_config_file]) if File.exist?(NODE[:lb_config_file])
+      file = File.new(NODE[:lb_config_file], 'w')
       (1..NODES_COUNT).each do |i|
           node_name = "#{NODE[:name_prefix]}#{i}"
-          file.puts "[[nodes]]"
-          file.puts "id = \"#{node_name}\""
-          file.puts "host = \"#{node_name}\""
-          file.puts "port = #{NODE[:port]}"
-          file.puts ""
+          node_ip = "#{NODE[:subnet]}#{NODE[:ip_offset] + i}"
+          file.puts "#{node_name} #{node_ip}"
       end
       file.close
 
@@ -65,20 +62,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   (1..NODES_COUNT).each do |i|
     node_ip_addr = "#{NODE[:subnet]}#{NODE[:ip_offset] + i}"
     node_name = "#{NODE[:name_prefix]}#{i}"
+    config.vm.define node_name do |s|
+        s.vm.network :private_network, ip: node_ip_addr
+        s.vm.hostname = node_name
 
-    config.vm.define node_name do |client|
-        client.vm.network :private_network, ip: node_ip_addr
-        client.vm.hostname = node_name
-
-        client.vm.provider "docker" do |docker|
-            docker.image = NODE[:image]
-            docker.name = node_name
-            docker.env = {
+        s.vm.provider "docker" do |d|
+            d.image = NODE[:image]
+            d.name = node_name
+            # d.has_ssh = true
+            d.env = {
                 "ID": node_name,
             }
         end
 
-        client.vm.post_up_message = "Node #{node_name} up and running."
+        s.vm.post_up_message = "Node #{node_name} up and running."
     end
   end
 
