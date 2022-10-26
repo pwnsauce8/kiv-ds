@@ -26,15 +26,17 @@ LOOKUP_IMAGE  = "node_looukup:latest"
 
 # Node definitions
 NODE  = { 
-          :dir => "node",
+          :dir => "client",
           :name_prefix => "node-",  
           :subnet => "10.0.1.",
           :ip_offset => 10, 
-          :image => CLIENT_IMAGE
+          :image => CLIENT_IMAGE,
+          :lb_config_file => "client/config.conf"
         }
 
 # Lookup definition
 LOOKUP = {
+    :dir => "lookup",
     :name => "node-lookup",
     :ip_addr => "10.0.1.111",
     :image => LOOKUP_IMAGE,
@@ -53,19 +55,24 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       puts "Building nodes configuration"
       File.delete(LOOKUP[:lb_config_file]) if File.exist?(LOOKUP[:lb_config_file])
       file = File.new(LOOKUP[:lb_config_file], 'w')
-      (1..NODES_COUNT).each do |i|
-          node_name = "#{NODE[:name_prefix]}#{i}"
-          node_ip = "#{NODE[:subnet]}#{NODE[:ip_offset] + i}"
-          file.puts "#{node_name}, #{node_ip}"
-      end
+      file.puts "#{NODES_COUNT}"
+      file.close
+
+      File.delete(NODE[:lb_config_file]) if File.exist?(NODE[:lb_config_file])
+      file = File.new(NODE[:lb_config_file], 'w')
+      file.puts "#{NODES_COUNT}"
       file.close
 
       puts "Building node image:"
       `docker build -t "#{NODE[:image]}" #{NODE[:dir]}`
+      `docker build -t "#{LOOKUP[:image]}" #{LOOKUP[:dir]}`
       # --- end of Ruby script ---
 
     end
   end
+
+  # config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".*/"
+  # config.ssh.insert_key = false
 
   config.vm.define LOOKUP[:name] do |s|
     s.vm.network "private_network", ip: LOOKUP[:ip_addr]
@@ -92,7 +99,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             d.name = node_name
             # d.has_ssh = true
             d.env = {
-                "ID": node_name,
+                "NodesCount": NODES_COUNT
             }
         end
 
