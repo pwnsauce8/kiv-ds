@@ -1,9 +1,7 @@
-from pickle import TRUE
 import socket
 import threading
 import requests
 import config as config
-from election import set_colors
 
 class Node:
 
@@ -17,6 +15,14 @@ class Node:
         self._semafore = threading.Semaphore(1)
         self._disabled = False
         self._other_nodes = []
+
+        print(f"Node [{str(self._ip)}] was created", flush=True)
+        # Open config
+        conf = open('/opt/client/config.conf', 'r')
+        lines = conf.readlines()
+        conf.close()
+        self._nodes_count = lines[0].strip()
+
 
     def disable(self):
         self._disabled = True
@@ -49,17 +55,10 @@ class Node:
         print("Removed Node [" + node_ip + "]")
     
     def set_coordinator(self):
-        self._semafore.acquire()
         self._isCoordinator = True
+        self._coordinator_ip = self._ip
         self.set_color(config.NodeColor.GREEN)  # Master node must be green
         print("Node [" + self._ip + "] is a Coordinator")
-        # Notify all nodes
-        for ip in self._other_nodes:
-            coordinator = f'http://{ip}:{self._port}/set-coordinator'
-            requests.post(coordinator, verify=False, timeout=config.TIMEOUT)
-        self._semafore.release()
-        # set colors no other nodes
-        set_colors(self)
     
     def unset_coordinator(self):
         self._isCoordinator = False
@@ -74,8 +73,10 @@ class Node:
 
     def get_info(self):
         return{
+            'nodes': self._other_nodes,
+            'hostname': self._hostname,
             'isCoordinator': str(self._isCoordinator),
-            'color': str(self._color)
+            'color': self._color.value
         }
 
 
