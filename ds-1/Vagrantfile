@@ -1,5 +1,6 @@
 # Number of nodes to start:
 NODES_COUNT = 3
+
 VAGRANTFILE_API_VERSION = "2"
 # set docker as the default provider
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'docker'
