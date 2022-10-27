@@ -1,9 +1,4 @@
-#
-# *** Demo 3
-# Create N backend nodes and 1 frontend node working as a load-balancer.
-#
-
-# Number of backends to start:
+# Number of nodes to start:
 NODES_COUNT = 3
 VAGRANTFILE_API_VERSION = "2"
 # set docker as the default provider
@@ -71,9 +66,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  # config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".*/"
-  # config.ssh.insert_key = false
-
   config.vm.define LOOKUP[:name] do |s|
     s.vm.network "private_network", ip: LOOKUP[:ip_addr]
     s.vm.network "forwarded_port", guest: 5000, host: 8080, host_ip: "0.0.0.0"
@@ -81,7 +73,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     s.vm.provider "docker" do |d|
       d.image = LOOKUP[:image]
       d.name = LOOKUP[:name]
-      # d.has_ssh = true
     end
     s.vm.post_up_message = "Node #{LOOKUP[:name]} up and running. You can access the node with 'vagrant ssh #{LOOKUP[:name]}'}"
   end
@@ -97,7 +88,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         s.vm.provider "docker" do |d|
             d.image = NODE[:image]
             d.name = node_name
-            # d.has_ssh = true
             d.env = {
                 "NodesCount": NODES_COUNT
             }
