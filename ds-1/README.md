@@ -29,6 +29,8 @@ This project uses **Bully algorithm** to elect a master node.
 
 ## Build and run
 
+
+
 ### Settings
 
 Change node count is possible in `Vagrantfile` on line number `2`:
@@ -63,3 +65,6 @@ docker start *container name*
 Example:
 
 ![Interaction example](images/interaction.png)
+
+User is able to use [http://172.17.0.2:5000/info](http://172.17.0.2:5000/info) adress for displaying all nodes status and colors. 
+
