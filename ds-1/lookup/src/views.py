@@ -18,6 +18,6 @@ tr:nth-child(even) {\
 </style>\
 </head>\
 <body>\
-<h2>HTML Table</h2>"
+<h2>System status</h2>"
 
 HTML_END = "</body></html>"
