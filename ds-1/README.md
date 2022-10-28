@@ -48,7 +48,7 @@ NODES_COUNT = 3
 
 ### Run
 
-To start vagrant In main folder `/ds-1` run command:
+To start vagrant use following command in main folder `/ds-1`
 
 ```bash
 vagrant up
@@ -76,7 +76,7 @@ User is able to use [http://172.17.0.2:5000/info](http://172.17.0.2:5000/info) a
 
 ![System status](images/system-status.png)
 
-The same information is available in Coordinator node logs:
+The same information is also available in Coordinator node logs:
 
 ```bash
 docker logs *coordinator container name*
