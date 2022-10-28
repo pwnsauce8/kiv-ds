@@ -68,3 +68,12 @@ Example:
 
 User is able to use [http://172.17.0.2:5000/info](http://172.17.0.2:5000/info) adress for displaying all nodes status and colors. 
 
+![System status](images/system-status.png)
+
+The same information is available in Coordinator node logs:
+
+```bash
+docker logs *coordinator container name*
+```
+
+![Logs](images/logs.png)
