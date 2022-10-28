@@ -1,6 +1,6 @@
 # Assignment #1
 
-Objective of this task is to implement a distributed application for election of one master node (coordinator) from N identical nodes. 
+The objective of this task is to implement a distributed application for election of one master node (coordinator) from N identical nodes. 
 After selection of the master node, application controls the "coloring" of nodes with following rules:
 
 * Master must be always `GREEN`
@@ -13,14 +13,20 @@ This project uses **Bully algorithm** to elect a master node.
 
 ### Assumptions
 
-* Each node knows the IP of every other node.
-* A process initiates an election if it notices that the coordinator has failed.
+* Each node knows the IP of every other node
+* A process initiates an election if it notices that the coordinator has failed
+* The Coordinator is always `red`
+* After finding green and red nodes count, the first n nodes become `green` and the rest become `red`
 
 ### Algorithm Details
 
-* Each node N is traversing through all other nodes
-* The Coordinator does have largest IP number 
-* Coorinator sends `set-coordinator` message for all nodes 
+1. Each node is traversing through all other nodes
+2. If there are no larger IP number in a node list, the current node becomes a Coordinator 
+3. For updating the information, Coordinator sends `set-coordinator` message for all nodes for set a new coordinator IP
+4. The Coordinator starts to control each node in the loop to prevent dead nodes
+5. Other nodes are sending `is-alive` message for a coordinator for prevent dead coordinator
+6. If coordinator is not responding, all nodes will start election process again (goto: 1. step)
+7. Coloring process is starting after each election process
 
 ## Requirements
 
@@ -66,7 +72,7 @@ Example:
 
 ![Interaction example](images/interaction.png)
 
-User is able to use [http://172.17.0.2:5000/info](http://172.17.0.2:5000/info) adress for displaying all nodes status and colors. 
+User is able to use [http://172.17.0.2:5000/info](http://172.17.0.2:5000/info) address for displaying all nodes status and colors. 
 
 ![System status](images/system-status.png)
 
