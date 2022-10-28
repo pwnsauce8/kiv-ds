@@ -9,7 +9,7 @@ import sys
 import config as config
 from threading import Thread
 
-# Method is going throw all IP in the network until will not collect confugured node count
+# Method is going through all IP in the network until it reaches count out configured node 
 # After all nodes are found, the election proceess will start
 def start(current_node):
     coordinatorExists = False
@@ -19,7 +19,7 @@ def start(current_node):
     mask = interface_address['netmask']
     interface = IPv4Interface(f'{addr}/{mask}')
 
-    # Go throw all ip in the network
+    # Go through all ip in the network
     for ip in interface.network:
         if ip == interface.ip:
             continue
@@ -65,7 +65,7 @@ def election(current_node):
     
     for ip in current_node._other_nodes:
         split_addr =  ip.split(".")
-        # Is master
+        # looking for master
         if (int(split_addr_curr[3]) > int(split_addr[3])):
             isCoordinator = isCoordinator and True
         else:
@@ -73,17 +73,17 @@ def election(current_node):
     
     if isCoordinator is True:
         current_node.set_coordinator()
-        # Notify other nodes
+        # Notify other nodes coordinator has been found
         notify_others(current_node, 'set-coordinator', True)
-        # Set colors
+        # Set colors of each node
         set_colors(current_node)
         print_nodes(current_node)
-        # Handle all nodes
+        # Handle all nodes whether its alive
         Thread(target=handle_nodes, args=(current_node, )).start()
     
     return isCoordinator
 
-# Coordinator is printig all nodes information
+# Coordinator is printig information about all nodes
 def print_nodes(current_node):
     if current_node._isCoordinator is False:
         return
@@ -95,7 +95,7 @@ def print_nodes(current_node):
             if response.status_code == 200:
                 data = response.json()
 
-                print(f'- {data["hostname"]} [{ip}] - {data["color"]}', flush=True)
+                print(f'*** {data["hostname"]} [{ip}] - {data["color"]}', flush=True)
         except requests.exceptions.RequestException as e:
             continue
 
@@ -132,9 +132,9 @@ def set_colors(current_node):
             red_nodes -= 1
     
     if not isOk:
-        print("Cannot set colors to nodes.", flush=True)
+        print("*** Cannot set colors to nodes.", flush=True)
     
-# Handle all nodes, is some node is dead, the Coordinator will notify all nodes
+# Handle all nodes, if some node is dead, the Coordinator will notify all nodes
 def handle_nodes(current_node):
     while True:
         for ip in current_node._other_nodes:
@@ -153,8 +153,8 @@ def handle_nodes(current_node):
                 continue
         time.sleep(3)
 
-# After node will recieve from Coordinator, that some node is dead, 
-# Node will check it and deleated dead nodes from his list
+# If node recieve a msg from Coordinator about another node's termination, 
+# node will find and delete the terminated nodes from its list
 def check_nodes(current_node):
         for node_ip in current_node._other_nodes:
             hello = f'http://{node_ip}:{current_node._port}/is-alive'
@@ -167,7 +167,7 @@ def check_nodes(current_node):
                 current_node.remove_node(str(node_ip))
                 continue
 
-# Method is using to send message for all nodes
+# Method is used to send message for all nodes
 def notify_others(current_node, message, isPost):
     if current_node._isCoordinator is False:
         return
