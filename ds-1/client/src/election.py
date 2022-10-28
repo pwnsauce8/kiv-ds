@@ -95,7 +95,7 @@ def print_nodes(current_node):
             if response.status_code == 200:
                 data = response.json()
 
-                print(f'- {data["hostname"]} [{ip}] - {data["color"]}', flush=True)
+                print(f'*** {data["hostname"]} [{ip}] - {data["color"]}', flush=True)
         except requests.exceptions.RequestException as e:
             continue
 
@@ -132,7 +132,7 @@ def set_colors(current_node):
             red_nodes -= 1
     
     if not isOk:
-        print("Cannot set colors to nodes.", flush=True)
+        print("*** Cannot set colors to nodes.", flush=True)
     
 # Handle all nodes, if some node is dead, the Coordinator will notify all nodes
 def handle_nodes(current_node):
