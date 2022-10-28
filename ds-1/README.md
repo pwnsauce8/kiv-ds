@@ -45,3 +45,20 @@ To start vagrant In main folder `/ds-1` run command:
 ```bash
 vagrant up
 ```
+
+### Interaction
+
+For functionality testing user can use following command for stop node
+
+```bash
+docker stop *container name*
+```
+
+and start it again:
+
+```bash
+docker start *container name*
+```
+
+Example:
+![alt text](/images/interaction.png "Interaction")
