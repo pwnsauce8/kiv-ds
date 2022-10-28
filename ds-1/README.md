@@ -15,7 +15,7 @@ This project uses **Bully algorithm** to elect a master node.
 
 * Each node knows the IP of every other node
 * A process initiates an election if it notices that the coordinator has failed
-* The Coordinator is always `red`
+* The Coordinator is always `green`
 * After finding green and red nodes count, the first n nodes become `green` and the rest become `red`
 
 ### Algorithm Details
