@@ -9,6 +9,8 @@ import sys
 import config as config
 from threading import Thread
 
+# Method is going throw all IP in the network until will not collect confugured node count
+# After all nodes are found, the election proceess will start
 def start(current_node):
     coordinatorExists = False
     # Get interface address
@@ -17,6 +19,7 @@ def start(current_node):
     mask = interface_address['netmask']
     interface = IPv4Interface(f'{addr}/{mask}')
 
+    # Go throw all ip in the network
     for ip in interface.network:
         if ip == interface.ip:
             continue
@@ -27,34 +30,29 @@ def start(current_node):
             response = requests.post(hello, verify=False, timeout=config.TIMEOUT)
             if response.status_code == 200:
                 data = response.json()
+                # Coorinator validation
                 if not coordinatorExists and data['isCoordinator'] is True:
                     coordinatorExists = True
                     current_node.set_coordinator_ip(ip)
                 if coordinatorExists is True and data['isCoordinator'] is True:
                     os.kill(os.getpid(), signal.SIGKILL)
                 
-                print(f"Node [{str(ip)}] was added", flush=True)
                 current_node.add_node(str(ip))
         except requests.exceptions.RequestException as e:
-            print(f"Error Nodes count [{str(current_node._nodes_count)}] - {len(current_node._other_nodes)}", flush=True)
             if int(current_node._nodes_count) - 1 == (len(current_node._other_nodes)):
                 break
             else:
                 continue
 
-        print(f"Nodes count [{str(current_node._nodes_count)}] - {len(current_node._other_nodes)}", flush=True)
         if int(current_node._nodes_count) - 1 == (len(current_node._other_nodes)):
                 break
     
-    print('Finnish traversing', flush=True)
     if current_node._coordinator_ip is not None:
-        print(f"***** Follow coordinator", flush=True)
         Thread(target=handle_coordinator, args=(current_node, )).start()
     else:
-        print('*****Check', flush=True)
         election(current_node)
 
-
+# The simple Bully algorithm implementation
 def election(current_node):
     isCoordinator = True
     # Get interface address
@@ -67,7 +65,6 @@ def election(current_node):
     
     for ip in current_node._other_nodes:
         split_addr =  ip.split(".")
-        print(f"***** {split_addr_curr[3]} vs {split_addr[3]}", flush=True)
         # Is master
         if (int(split_addr_curr[3]) > int(split_addr[3])):
             isCoordinator = isCoordinator and True
@@ -79,41 +76,30 @@ def election(current_node):
         # Notify other nodes
         notify_others(current_node, 'set-coordinator', True)
         # Set colors
-        print(f"***** Set colors", flush=True)
         set_colors(current_node)
+        print_nodes(current_node)
+        # Handle all nodes
         Thread(target=handle_nodes, args=(current_node, )).start()
     
     return isCoordinator
 
-
-# def election(current_node):
-#     at_least_one_response = False
-#     at_least_one_bigger = False
-
-#     print(f"***** Election started", flush=True)
-#     for ip in current_node._other_nodes:
-#         split_addr =  ip.split(".")
-#         split_addr_curr =  str(current_node._ip).split(".")
-
-#         print(f"***** {split_addr[3]} vs {split_addr_curr[3]}", flush=True)
-#         # Send election to greater IPs
-#         if (int(split_addr[3]) > int(split_addr_curr[3])):
-#             at_least_one_bigger = True
-#             election_msg = f'http://{ip}:{current_node._port}/election'
-#             response = requests.post(election_msg, verify=False, timeout=config.TIMEOUT)
-#             if response.status_code == 200:
-#                 at_least_one_response = True
-#                 print(f"Response OK", flush=True)
+# Coordinator is printig all nodes information
+def print_nodes(current_node):
+    if current_node._isCoordinator is False:
+        return
     
-#     if at_least_one_bigger is True and not at_least_one_response:
-#         # Set as coordinator
-#         current_node.set_coordinator()
-#         set_colors(current_node)
-#         Thread(target=handle_nodes, args=(current_node, )).start()
-    
-#     print(f"***** Election finished", flush=True)
-    
+    for ip in current_node._other_nodes:
+        hello = f'http://{ip}:{current_node._port}/get-details'
+        try:
+            response = requests.get(hello, verify=False, timeout=config.TIMEOUT)
+            if response.status_code == 200:
+                data = response.json()
 
+                print(f'- {data["hostname"]} [{ip}] - {data["color"]}', flush=True)
+        except requests.exceptions.RequestException as e:
+            continue
+
+# Setting color to nodes (1/3) is GREEN and (2/3) is RED 
 def set_colors(current_node):
     if current_node._isCoordinator is False:
         return
@@ -148,6 +134,7 @@ def set_colors(current_node):
     if not isOk:
         print("Cannot set colors to nodes.", flush=True)
     
+# Handle all nodes, is some node is dead, the Coordinator will notify all nodes
 def handle_nodes(current_node):
     while True:
         for ip in current_node._other_nodes:
@@ -159,17 +146,16 @@ def handle_nodes(current_node):
                 if response.status_code != 200:
                     current_node.remove_node(str(ip))
                     notify_others(current_node, 'node-is-dead', True)
-                    print("Node [" + ip + "] was deleted", flush=True)
             except:
                 current_node.remove_node(str(ip))
                 notify_others(current_node, 'node-is-dead', True)
-                print("Node [" + ip + "] was deleted", flush=True)
                 time.sleep(3)
                 continue
         time.sleep(3)
 
+# After node will recieve from Coordinator, that some node is dead, 
+# Node will check it and deleated dead nodes from his list
 def check_nodes(current_node):
-        print(f"***** Checking nodes", flush=True)
         for node_ip in current_node._other_nodes:
             hello = f'http://{node_ip}:{current_node._port}/is-alive'
             
@@ -177,25 +163,23 @@ def check_nodes(current_node):
                 response = requests.get(hello, verify=False, timeout=5)
                 if response.status_code != 200:
                     current_node.remove_node(str(node_ip))
-                    print("Node [" + node_ip + "] was deleted", flush=True)
             except:
                 current_node.remove_node(str(node_ip))
-                print("Node [" + node_ip + "] was deleted", flush=True)
                 continue
 
+# Method is using to send message for all nodes
 def notify_others(current_node, message, isPost):
     if current_node._isCoordinator is False:
         return
 
-    print(f"***** Notify started", flush=True)
     for ip in current_node._other_nodes:
         coordinator = f'http://{ip}:{current_node._port}/{message}'
         if isPost is True:
             requests.post(coordinator, verify=False, timeout=config.TIMEOUT)
         else:
             requests.get(coordinator, verify=False, timeout=config.TIMEOUT)
-    print(f"***** Notify finished", flush=True)
-    
+
+# Handle Coordinator 
 def handle_coordinator(current_node):
     while True:
         # Send hello message
@@ -205,11 +189,9 @@ def handle_coordinator(current_node):
             response = requests.get(hello, verify=False, timeout=5)
             if response.status_code != 200:
                 current_node.remove_node(str(current_node._coordinator_ip))
-                print("***** Coordinator was deleted", flush=True)
                 break
         except:
             current_node.remove_node(str(current_node._coordinator_ip))
-            print("***** Coordinator was deleted", flush=True)
             break
            
         time.sleep(3)
