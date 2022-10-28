@@ -21,7 +21,7 @@ class Node:
         lines = conf.readlines()
         conf.close()
         self._nodes_count = lines[0].strip()
-        print(f"*** Node [{str(self._ip)}] was created", flush=True)
+        print(f"*** Node [{str(self._ip)}] has been created", flush=True)
 
 
     def disable(self):
@@ -45,14 +45,14 @@ class Node:
         if node_ip not in self._other_nodes:
             self._other_nodes.append(str(node_ip))
         self._semafore.release()
-        print("*** Added Node [" + node_ip + "]", flush=True)
+        print("*** New Node [" + node_ip + "] has been added", flush=True)
 
     def remove_node(self, node_ip):
         self._semafore.acquire()
         if node_ip in self._other_nodes:
             self._other_nodes.remove(str(node_ip))
         self._semafore.release()
-        print("*** Removed Node [" + node_ip + "]", flush=True)
+        print("*** Node [" + node_ip + "] has been removed", flush=True)
     
     def set_coordinator(self):
         self._isCoordinator = True
