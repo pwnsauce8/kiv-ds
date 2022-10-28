@@ -18,7 +18,7 @@ end
 
 # Names of Docker images built:
 CLIENT_IMAGE  = "node_election:latest"
-LOOKUP_IMAGE  = "node_looukup:latest"
+LOOKUP_IMAGE  = "node_lookup:latest"
 
 # Node definitions
 NODE  = { 
