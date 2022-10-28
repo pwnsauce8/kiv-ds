@@ -61,4 +61,5 @@ docker start *container name*
 ```
 
 Example:
-![alt text](images\interaction.png "Interaction")
+
+![Interaction example](images/interaction.png)
