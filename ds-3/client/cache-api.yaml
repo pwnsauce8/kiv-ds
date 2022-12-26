@@ -1,0 +1,75 @@
+openapi: 3.0.3
+info:
+  title: KIV-DS
+  description: Distributed Cache
+  version: 1.0.0
+
+tags:
+  - name: Cache
+  
+paths:
+  /cache/{key}:
+    parameters:
+      - name: key
+        in: path
+        description: Key value
+        required: true
+        schema:
+          type: integer
+          format: int64
+            
+    get:
+      summary: Get key value
+      tags:
+        - Cache
+      description: Get key value
+      operationId: get
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Invalid key parameter
+        '404':
+          description: No value exists for entered key
+          
+    delete:
+      summary: Delete additive
+      tags:
+        - Cache
+      description: Delete additive by id
+      operationId: delete
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Invalid key parameter
+        '404':
+          description: No value exists for entered key
+    
+  /cache/{key}/{value}:      
+    put:
+      summary: Add new key-value record
+      tags:
+        - Cache
+      description: Add new key-value record
+      operationId: put
+      parameters:
+        - name: key
+          in: path
+          description: Key value
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: value
+          in: path
+          description: Key value
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Invalid key or value parameters
