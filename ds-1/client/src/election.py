@@ -77,7 +77,6 @@ def election(current_node):
         notify_others(current_node, 'set-coordinator', True)
         # Set colors of each node
         set_colors(current_node)
-        print_nodes(current_node)
         # Handle all nodes whether its alive
         Thread(target=handle_nodes, args=(current_node, )).start()
     
@@ -98,7 +97,7 @@ def print_nodes(current_node):
                 print(f'*** {data["hostname"]} [{ip}] - {data["color"]}', flush=True)
         except requests.exceptions.RequestException as e:
             continue
-
+ 
 # Setting color to nodes (1/3) is GREEN and (2/3) is RED 
 def set_colors(current_node):
     if current_node._isCoordinator is False:
@@ -107,7 +106,8 @@ def set_colors(current_node):
     # Number of all nodes in network 
     node_count = len(current_node._other_nodes) + 1 
     # (1/3) of all nodes are GREEN
-    green_nodes = math.ceil((1.0 / 3.0) * node_count) - 1  
+    green_nodes = math.ceil((1.0 / 3.0) * node_count)  
+    green_nodes = green_nodes - 1
     # (2/3) of all nodes are RED
     red_nodes = node_count - green_nodes 
 
@@ -130,7 +130,8 @@ def set_colors(current_node):
                 isOk = False
                 break
             red_nodes -= 1
-    
+
+    print_nodes(current_node)
     if not isOk:
         print("*** Cannot set colors to nodes.", flush=True)
     
@@ -146,9 +147,13 @@ def handle_nodes(current_node):
                 if response.status_code != 200:
                     current_node.remove_node(str(ip))
                     notify_others(current_node, 'node-is-dead', True)
+                    time.sleep(3)
+                    set_colors(current_node)
             except:
                 current_node.remove_node(str(ip))
                 notify_others(current_node, 'node-is-dead', True)
+                time.sleep(3)
+                set_colors(current_node)
                 time.sleep(3)
                 continue
         time.sleep(3)

@@ -7,6 +7,13 @@ After selection of the master node, application controls the "coloring" of nodes
 * 1/3 of nodes will be `GREEN`
 * 2/3 of nodes will be `RED`
 
+# Assignment #2
+
+"Failure detection" was implemented. 
+
+* master node is failed -> new election process will start
+* slave node is failed -> new coloring process will start.
+
 ## General info
 
 This project uses **Bully algorithm** to elect a master node.
