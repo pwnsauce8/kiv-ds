@@ -1,0 +1,7 @@
+flask-apispec==0.11.4
+apispec-webframeworks==0.5.2
+PyYAML==6.0
+kazoo==2.6.0
+Flask==2.0.1
+requests==2.25.1
+

@@ -1,4 +1,5 @@
-openapi: 3.0.3
+openapi: 3.0.0
+
 info:
   title: KIV-DS
   description: Distributed Cache
@@ -6,24 +7,21 @@ info:
 
 tags:
   - name: Cache
-  
+
 paths:
-  /cache/{key}:
-    parameters:
-      - name: key
-        in: path
-        description: Key value
-        required: true
-        schema:
-          type: integer
-          format: int64
-            
+  /cache:
     get:
       summary: Get key value
       tags:
         - Cache
       description: Get key value
-      operationId: get
+      operationId: get_val
+      parameters:
+        - in: query
+          name: key
+          schema:
+            type: string
+          description: Key value
       responses:
         '200':
           description: OK
@@ -31,13 +29,19 @@ paths:
           description: Invalid key parameter
         '404':
           description: No value exists for entered key
-          
+
     delete:
-      summary: Delete additive
+      summary: Delete value
       tags:
         - Cache
-      description: Delete additive by id
-      operationId: delete
+      description: Delete value
+      operationId: delete_val
+      parameters:
+        - in: query
+          name: key
+          schema:
+            type: string
+          description: Key value
       responses:
         '200':
           description: OK
@@ -45,29 +49,24 @@ paths:
           description: Invalid key parameter
         '404':
           description: No value exists for entered key
-    
-  /cache/{key}/{value}:      
+
     put:
       summary: Add new key-value record
       tags:
         - Cache
       description: Add new key-value record
-      operationId: put
+      operationId: put_key_val
       parameters:
-        - name: key
-          in: path
-          description: Key value
-          required: true
+        - in: query
+          name: key
           schema:
-            type: integer
-            format: int64
-        - name: value
-          in: path
+            type: string
           description: Key value
-          required: true
+        - in: query
+          name: value
           schema:
-            type: integer
-            format: int64
+            type: string
+          description: Value which is stored in key
       responses:
         '200':
           description: OK
