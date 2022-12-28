@@ -1,8 +1,17 @@
 #
-# *** Demo 4 - Zookeeper
-# Create 1 Zookeeper node and N clients.
+# *** KIV/DS - Task 3
+# Distributed cache
 #
 
+
+# Settings
+# ---------------------------------------
+TREE_LEVEL = 3
+CLIENTS_COUNT = (2**TREE_LEVEL) - 1
+PORT = 5000
+
+
+# Configure
 VAGRANTFILE_API_VERSION = "2"
 # set docker as the default provider
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'docker'
@@ -19,8 +28,8 @@ unless Vagrant.has_plugin?("vagrant-docker-compose")
 end
 
 # Names of Docker images built:
-ZOONODE_IMAGE  = "ds/demo-4/zoonode:0.1"
-CLIENT_IMAGE   = "ds/demo-4/client:0.1"
+ZOONODE_IMAGE  = "ds/task-3/zoonode:0.1"
+CLIENT_IMAGE   = "ds/task-3/client:0.1"
 ZOONAVIGATOR_IMAGE = "elkozmon/zoonavigator:latest"
 # Subnet to use:
 SUBNET = "10.0.1."
@@ -32,8 +41,12 @@ CLIENT  = { :nameprefix => "client-",
             :image => CLIENT_IMAGE,
             :config => "client/client.cfg"
           }
-# Number of clients to start:
-CLIENTS_COUNT = 3
+
+# Root information
+ROOT_ID = 0
+ROOT_IP = "#{CLIENT[:subnet]}#{CLIENT[:ip_offset] + ROOT_ID}"
+
+ZOO_SERVERS="#{SUBNET}100"
 
 # Common configuration
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -68,19 +81,25 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     s.vm.post_up_message = "Node 'zoonode' up and running. You can access the node with 'vagrant ssh zoonode'}"
   end
 
-  # Definition of N client nodes
-  (1..CLIENTS_COUNT).each do |i|
+
+  # Definition of N - 1 client nodes
+  (0..CLIENTS_COUNT).each do |i|
     node_ip_addr = "#{CLIENT[:subnet]}#{CLIENT[:ip_offset] + i}"
     node_name = "#{CLIENT[:nameprefix]}#{i}"
     # Definition of client node
     config.vm.define node_name do |s|
       s.vm.network "private_network", ip: node_ip_addr
+      s.vm.network "forwarded_port", guest: 80, host: PORT, host_ip: "0.0.0.0", auto_correct: true
       s.vm.hostname = node_name
       s.vm.provider "docker" do |d|
         d.image = CLIENT[:image]
         d.name = node_name
         d.has_ssh = true
-        d.env = { "ZOO_SERVERS" => "#{SUBNET}100" }
+        d.env = { 
+          "ZOO_SERVERS" => "#{ZOO_SERVERS}",
+          "NODE_IP" => node_ip_addr, 
+          "ROOT_IP" => "#{ROOT_IP}"
+        }
       end
       s.vm.post_up_message = "Node #{node_name} up and running. You can access the node with 'vagrant ssh #{node_name}'}"
     end
